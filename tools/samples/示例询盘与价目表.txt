@@ -1,0 +1,49 @@
+【示例文件 / SAMPLE ONLY】
+以下询盘、价目表和联系方式全部是为教程编写的虚构内容。
+Harbour Lane Homeware、Willow & Co Home 都不是真实商家。
+请勿发信、请勿下单、请勿付款。
+
+==================== 客户询盘（给 AI 的输入之一）====================
+From: Sam Liu <sam@example-willowhome.test>
+To: sales@example-harbourlane.test
+Date: 18 November 2026
+Subject: Request for quotation — ceramic dinner plates
+
+Hello,
+
+We run a small homewares shop in Parramatta, NSW. Could you please quote for:
+
+- 80 x 27cm white ceramic dinner plates (your item code if you have a plain white coupe plate)
+- Carton quantity and lead time
+- Delivery to our store in Parramatta (postcode 2150)
+- Whether you can do a smaller trial order of 20 pieces first
+- Payment terms for a new customer
+
+We would like to receive the goods before 15 December 2026 if possible.
+
+Kind regards,
+Sam Liu
+Willow & Co Home
+sam@example-willowhome.test
+0412 000 000
+
+==================== 店内价目表（示例，给 AI 的输入之二）====================
+Harbour Lane Homeware — internal price list (SAMPLE, not a real offer)
+Currency: AUD
+
+Item: White coupe dinner plate, 27 cm
+SKU: HL-PLATE-27-W
+Unit price: $4.80 excluding GST
+Carton quantity: 20 pieces
+GST: 10%
+
+Freight to Sydney metro (including Parramatta 2150):
+- $85.00 excluding GST per delivery, if the goods total is under $600 excluding GST
+- Freight included, if the goods total is $600 excluding GST or more
+
+Lead time if in stock: 5–7 business days, plus 1–2 days for Sydney metro delivery
+Stock: AI must mark this as “需你确认”. Do not invent a stock figure.
+Trial order: 20 pieces allowed at the same unit price; freight still follows the rules above.
+New customer payment terms: 50% deposit to confirm the order, balance payable before dispatch.
+
+Do not offer discounts, credit terms, or delivery dates that are not in this list.

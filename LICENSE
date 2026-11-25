@@ -1,0 +1,11 @@
+本仓库中的文档、提示词、清单和示例文本，除非另有说明，均采用
+Creative Commons Attribution 4.0 International（CC BY 4.0）许可。
+
+正式文本见：https://creativecommons.org/licenses/by/4.0/legalcode
+简明说明见：https://creativecommons.org/licenses/by/4.0/
+
+你可以使用、分享和修改这些文档，条件是注明出处（例如「店长 AI 笔记《一个人撑店，这些岗位我先交给 AI》」），并附上许可链接。修改后的版本也须说明改动之处。
+
+tools/n8n/ 下的工作流 JSON，以及日后加入的脚本，采用 MIT License。你需要自备 n8n 运行环境，并自行承担使用风险。
+
+tools/选品与算账工具箱_v1.xlsx 中的表格结构、说明和公式按 CC BY 4.0 提供。表内预填的产品名、价格、分数和工厂信息全部是示例，不是报价，也不是官方税率。

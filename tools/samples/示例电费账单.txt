@@ -1,0 +1,46 @@
+【示例文件 / SAMPLE ONLY】
+这是一份为小红书图文教程编写的虚构电费账单。
+公司、姓名、地址、账号、NMI、ABN、BPAY 编码全部是编造的。
+请勿付款，也请勿把这些付款码输入网银。
+Example Energy Pty Ltd 不是真实供电商，与任何真实能源公司无关。
+
+------------------------------------------------------------
+EXAMPLE ENERGY PTY LTD
+ABN 00 000 000 000
+Tax invoice
+
+Issued to (fictional):
+Alex Example
+10 Sample Street
+SAMPLETOWN VIC 3000
+
+Account number: 1000 0000
+Invoice number: INV-000000
+NMI: SAMPLE00000
+
+Issue date: 10 November 2026
+Billing period: 12 August 2026 to 9 November 2026 (90 days)
+Due date: 1 December 2026 (Tuesday)
+
+THIS ACCOUNT IS BASED ON AN ESTIMATED METER READING.
+估算抄表。实际读数出来后，金额可能调整。
+
+Opening balance: $0.00
+Payment received: $0.00
+Supply charge: 90 days × $1.20 per day (ex GST) = $108.00
+Peak usage: 500 kWh × $0.30 per kWh (ex GST) = $150.00
+Subtotal excluding GST: $258.00
+GST (10%): $25.80
+Current charges including GST: $283.80
+Total amount due: $283.80
+Pay-on-time discount if paid by 1 December 2026: –$14.20
+Amount due if paid by the due date: $269.60
+
+Average daily usage: 5.56 kWh
+Average daily cost (incl. GST): $3.15
+Next scheduled meter read: 8–14 February 2027
+
+PAYMENT DETAILS ARE FICTIONAL. DO NOT PAY.
+BPAY biller code: 00000
+Ref: SAMPLE-DO-NOT-PAY
+------------------------------------------------------------

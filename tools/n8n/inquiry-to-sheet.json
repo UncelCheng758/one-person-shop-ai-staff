@@ -1,0 +1,267 @@
+{
+  "id": "7c3e1a90-4b2f-4d11-9c8a-0f6e2b1d8a47",
+  "name": "Inquiry email to sheet and draft reply",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "inquiry-demo",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "12121212-1212-4212-8212-121212121212",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        460
+      ],
+      "webhookId": "inquiry-demo",
+      "disabled": true,
+      "notes": "Disabled for the CLI demo. Enable and activate the workflow later if you want to POST sample JSON to /webhook-test/inquiry-demo. Never connect a real mailbox."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input = $input.first()?.json ?? {};\n\nconst sample = {\n  fromName: 'Lisa Chen',\n  fromEmail: 'lisa.chen@example-cafe.au',\n  from: 'Lisa Chen <lisa.chen@example-cafe.au>',\n  subject: '询价 - oat milk 20L and coffee beans',\n  body: `Hi, 我是 Lisa，在 Melbourne Fitzroy 开了一家咖啡店 Little Bean Cafe。\n\n想问一下你们的 oat milk 20L 箱装和 Ethiopia espresso beans 的价格和 MOQ。我们大概需要 oat milk 8 箱，咖啡豆 10 kg。希望这周五前送到店里，地址是 42 Gertrude Street, Fitzroy VIC 3065。\n\n如果可以的话请把报价和交货时间发我，谢谢！\n\nLisa Chen\nLittle Bean Cafe`,\n  source: 'sample',\n};\n\n// Accept webhook JSON, a raw text/body field, or fall back to the built-in sample.\nconst hasBody = typeof input.body === 'string' && input.body.trim();\nconst hasText = typeof input.text === 'string' && input.text.trim();\nconst hasEmail = typeof input.email === 'string' && input.email.trim();\n\nif (hasBody || hasText || hasEmail || input.from || input.subject) {\n  return [{\n    json: {\n      fromName: input.fromName || '',\n      fromEmail: input.fromEmail || '',\n      from: input.from || input.fromEmail || '',\n      subject: input.subject || '',\n      body: (input.body || input.text || input.email || '').toString(),\n      source: 'incoming',\n    },\n  }];\n}\n\nreturn [{ json: sample }];\n"
+      },
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Prepare Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json;\nconst subject = (item.subject || '').toString();\nconst body = (item.body || '').toString();\nconst from = (item.from || '').toString();\nconst text = [from, subject, body].filter(Boolean).join('\\n');\n\nfunction firstMatch(patterns, source) {\n  for (const pattern of patterns) {\n    const match = source.match(pattern);\n    if (match) {\n      return (match[1] || match[0]).replace(/\\s+/g, ' ').trim();\n    }\n  }\n  return '';\n}\n\n// Customer name\nlet customerName = (item.fromName || '').trim();\nif (!customerName) {\n  customerName = firstMatch([\n    /我是\\s*([A-Za-z\\u4e00-\\u9fff][A-Za-z\\u4e00-\\u9fff .'-]{0,40})/,\n    /^From:\\s*([^<\\n]+)/im,\n    /^([A-Za-z\\u4e00-\\u9fff][A-Za-z\\u4e00-\\u9fff .'-]{1,40})\\s*<[^>]+>/,\n  ], text);\n}\n// Closing signature: last non-empty short line that looks like a name\nif (!customerName) {\n  const lines = body.split(/\\n/).map((l) => l.trim()).filter(Boolean);\n  for (let i = lines.length - 1; i >= 0; i--) {\n    if (/^[A-Za-z\\u4e00-\\u9fff][A-Za-z\\u4e00-\\u9fff .'-]{1,40}$/.test(lines[i]) && !/谢谢|please|regards/i.test(lines[i])) {\n      customerName = lines[i];\n      break;\n    }\n  }\n}\n\nlet fromEmail = (item.fromEmail || '').trim();\nif (!fromEmail) {\n  fromEmail = firstMatch([/([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})/], text);\n}\n\n// Business name if present\nconst businessName = firstMatch([\n  /(?:咖啡店|cafe|restaurant|shop|store)\\s*([A-Za-z0-9][A-Za-z0-9 .,'-]{1,50})/i,\n  /([A-Za-z][A-Za-z0-9 .,'-]{1,50})\\s*(?:咖啡店|Cafe)/,\n], text);\n\n// Products + quantities: collect noun phrases around 箱/kg/bottles plus named products\nconst productChunks = [];\nconst productPatterns = [\n  /oat milk(?:\\s*20L)?(?:\\s*箱装)?/ig,\n  /Ethiopia(?:n)?\\s+espresso\\s+beans/ig,\n  /咖啡豆/g,\n  /燕麦奶/g,\n];\nfor (const p of productPatterns) {\n  const found = text.match(p);\n  if (found) {\n    for (const f of found) {\n      const norm = f.replace(/\\s+/g, ' ').trim();\n      if (norm && !productChunks.some((x) => x.toLowerCase() === norm.toLowerCase())) {\n        productChunks.push(norm);\n      }\n    }\n  }\n}\n// Drop shorter product strings that are already contained in a longer match\nproductChunks.sort((a, b) => b.length - a.length);\nconst uniqueProducts = [];\nfor (const name of productChunks) {\n  if (!uniqueProducts.some((kept) => kept.toLowerCase().includes(name.toLowerCase()))) {\n    uniqueProducts.push(name);\n  }\n}\nproductChunks.length = 0;\nproductChunks.push(...uniqueProducts);\n\nconst quantityChunks = [];\nconst qtyMatches = text.matchAll(/(\\d+(?:\\.\\d+)?\\s*(?:箱|kg|公斤|瓶|件|盒|袋|cartons?|boxes|bottles?|packs?))/gi);\nfor (const m of qtyMatches) {\n  quantityChunks.push(m[1].replace(/\\s+/g, ' ').trim());\n}\n// contextual quantities such as \"oat milk 8 箱，咖啡豆 10 kg\"\nconst contextual = [...text.matchAll(/([A-Za-z\\u4e00-\\u9fff][A-Za-z\\u4e00-\\u9fff 0-9.]{0,40}?)\\s*(\\d+(?:\\.\\d+)?)\\s*(箱|kg|公斤|瓶|件|盒|袋|cartons?|boxes|bottles?)/gi)];\nconst quantityDetail = contextual.map((m) => {\n  const label = m[1].trim().replace(/^(?:我们)?(?:大概)?需要\\s*/, '').trim();\n  return `${label} ${m[2]} ${m[3]}`.replace(/\\s+/g, ' ').trim();\n});\n\nconst deliveryLocation = firstMatch([\n  /地址是\\s*([^\\n。]+)/,\n  /送到(?:店里)?[，, ]*(?:地址是)?\\s*([^\\n。]+)/,\n  /(\\d+\\s+[A-Za-z0-9 .'-]+(?:Street|St|Road|Rd|Avenue|Ave|Drive|Dr)[^\\n。]*)/i,\n  /((?:Melbourne|Sydney|Brisbane|Adelaide|Perth|Fitzroy|Parramatta)[^\\n。]{0,80})/i,\n], text);\n\nconst deadline = firstMatch([\n  /希望((?:这|本)?(?:周|星期)?[一二三四五六日天]前)/,\n  /(这周五前|本周五前|这周末前|本周末前|明天|后天)/,\n  /(?:by|before|deadline|due)\\s*[:：]?\\s*([A-Za-z0-9 ,/-]{3,40})/i,\n  /(\\d{1,2}\\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?(?:\\s*\\d{4})?)/i,\n  /(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}\\/\\d{1,2}\\/\\d{2,4})/,\n], text);\n\nconst receivedAt = new Date().toISOString();\n\nreturn [{\n  json: {\n    receivedAt,\n    customerName: customerName || '',\n    businessName: businessName || '',\n    fromEmail: fromEmail || '',\n    product: productChunks.join('；') || '',\n    quantity: (quantityDetail.length ? quantityDetail.join('；') : quantityChunks.join('；')) || '',\n    deliveryLocation: deliveryLocation || '',\n    deadline: deadline || '',\n    subject,\n    source: item.source || '',\n    originalFrom: from,\n    originalBody: body,\n  },\n}];\n"
+      },
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "Parse Inquiry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "csv",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileName": "inquiries.csv",
+          "headerRow": true
+        }
+      },
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "Spreadsheet File",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        740,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "./output/inquiries.csv",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "55555555-5555-4555-8555-555555555555",
+      "name": "Write CSV to Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        980,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const row = $input.first().json;\n\nconst name = row.customerName || '您好';\nconst business = row.businessName ? `（${row.businessName}）` : '';\nconst product = row.product || '您询问的产品';\nconst quantity = row.quantity || '（数量待确认）';\nconst location = row.deliveryLocation || '（送货地址待确认）';\nconst deadline = row.deadline || '（交期待确认）';\n\nconst draftReply = `主题：Re: ${row.subject || '询价回复'}\n\n${name}${business} 您好，\n\n感谢来信。我们已经记下这次询价，内容如下，请先帮我确认有没有漏掉或写错的地方：\n\n- 产品：${product}\n- 数量：${quantity}\n- 送货地址：${location}\n- 希望交期：${deadline}\n\n正式报价需要对照当天库存和物流后再给你，这里先不写价格或起订量，避免报错。确认以上信息无误后，我们会把报价和预计送达时间发来。\n\n这封是待发送的草稿，还没有发出。\n\nBest regards\n[Your name]\n[Your company]`;\n\nreturn [{\n  json: {\n    ...row,\n    draftReply,\n    sendStatus: 'draft_only_not_sent',\n  },\n}];\n"
+      },
+      "id": "66666666-6666-4666-8666-666666666666",
+      "name": "Draft Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "draftReply",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileName": "draft-reply.txt",
+          "encoding": "utf8"
+        }
+      },
+      "id": "77777777-7777-4777-8777-777777777777",
+      "name": "Convert Draft to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        980,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "./output/draft-reply.txt",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "88888888-8888-4888-8888-888888888888",
+      "name": "Write Draft to Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1220,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "complete",
+        "prompt": "={{ $json.draftReply }}"
+      },
+      "id": "99999999-9999-4999-8999-999999999999",
+      "name": "AI polish (disabled, needs API key)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.1,
+      "position": [
+        1220,
+        560
+      ],
+      "disabled": true,
+      "notes": "Placeholder only. Do not enable until an API key is stored as a credential. This node is not connected and will not send or rewrite anything."
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "Parse Inquiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Spreadsheet File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spreadsheet File": {
+      "main": [
+        [
+          {
+            "node": "Write CSV to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Convert Draft to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Draft to File": {
+      "main": [
+        [
+          {
+            "node": "Write Draft to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Australia/Sydney",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "00000000-0000-4000-8000-000000000001",
+  "tags": []
+}

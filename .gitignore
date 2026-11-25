@@ -1,0 +1,11 @@
+# 内部对照和发帖草稿，禁止上传到公开仓库
+EVIDENCE.md
+LAUNCH.md
+
+# 本地与密钥
+.env
+*.env
+.DS_Store
+output/
+.n8n/
+node_modules/
